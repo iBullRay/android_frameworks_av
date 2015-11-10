@@ -33,11 +33,14 @@
 
 #include <netinet/in.h>
 
+#include "actal_posix_dev.h"
+
 namespace android {
 
 ElementaryStreamQueue::ElementaryStreamQueue(Mode mode, uint32_t flags)
     : mMode(mode),
       mFlags(flags) {
+        init_buf = (int8_t *)actal_malloc(12);
 }
 
 sp<MetaData> ElementaryStreamQueue::getFormat() {
@@ -54,6 +57,11 @@ void ElementaryStreamQueue::clear(bool clearFormat) {
     if (clearFormat) {
         mFormat.clear();
     }
+
+    if (init_buf != NULL) {
+        actal_free(init_buf);
+        init_buf = NULL;
+	}
 }
 
 static bool IsSeeminglyValidADTSHeader(const uint8_t *ptr, size_t size) {
@@ -476,6 +484,11 @@ sp<ABuffer> ElementaryStreamQueue::dequeueAccessUnitAAC() {
             mBuffer->size() - offset);
     mBuffer->setRange(0, mBuffer->size() - offset);
 
+    if (timeUs == 0lld) {
+        ALOGD("tsa %lld", timeUs);
+        timeUs = 10;
+	}
+
     accessUnit->meta()->setInt64("timeUs", timeUs);
 
     return accessUnit;
@@ -609,6 +622,10 @@ sp<ABuffer> ElementaryStreamQueue::dequeueAccessUnitH264() {
 
             int64_t timeUs = fetchTimestamp(nextScan);
             CHECK_GE(timeUs, 0ll);
+
+            if (timeUs == 0ll) {
+                ALOGD("tsv %lld",timeUs);
+            }
 
             accessUnit->meta()->setInt64("timeUs", timeUs);
 

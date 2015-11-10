@@ -45,6 +45,9 @@ enum media_event_type {
     MEDIA_TIMED_TEXT        = 99,
     MEDIA_ERROR             = 100,
     MEDIA_INFO              = 200,
+    MEDIA_SUB               = 300,
+    MEDIA_REDIRECT          = 400,
+    MEDIA_REDIRECT_NUPLAYER = 700,
 };
 
 // Generic error codes for the media player framework.  Errors are fatal, the

@@ -18,6 +18,8 @@
 
 #define NUPLAYER_RENDERER_H_
 
+#define MAX_DROP_FRAME_NUM 6
+
 #include "NuPlayer.h"
 
 namespace android {
@@ -43,6 +45,11 @@ struct NuPlayer::Renderer : public AHandler {
 
     void pause();
     void resume();
+
+    void Seek(bool Seeking);
+    bool shouldSkipNotify();
+    void DiscardForward(int64_t time);
+    bool shouldDiscardForward();
 
     enum {
         kWhatEOS                 = 'eos ',
@@ -95,6 +102,9 @@ private:
     bool mFlushingAudio;
     bool mFlushingVideo;
 
+    int32_t mVideoFrmNum;
+    uint32_t mDropFrmNum;
+
     bool mHasAudio;
     bool mHasVideo;
     bool mSyncQueues;
@@ -102,8 +112,19 @@ private:
     bool mPaused;
     bool mVideoRenderingStarted;
 
+    bool mSeeking;
+
     int64_t mLastPositionUpdateUs;
     int64_t mVideoLateByUs;
+
+    int64_t m_discardFrame_video;
+    int64_t m_discardFrame_audio;
+    int64_t m_discardForward_video;
+    int64_t m_discardForward_audio;
+    int64_t last_mediaTimeUs_audio;
+    int64_t last_mediaTimeUs_video;
+    bool onDrainAudioQueue();
+    void postDrainAudioQueue(int64_t delayUs = 0);
 
     bool onDrainAudioQueue();
     void postDrainAudioQueue(int64_t delayUs = 0);
@@ -123,6 +144,8 @@ private:
     void notifyPosition();
     void notifyVideoLateBy(int64_t lateByUs);
     void notifyVideoRenderingStart();
+
+    bool shouldSkip(bool audio,QueueEntry *entry);
 
     void flushQueue(List<QueueEntry> *queue);
     bool dropBufferWhileFlushing(bool audio, const sp<AMessage> &msg);

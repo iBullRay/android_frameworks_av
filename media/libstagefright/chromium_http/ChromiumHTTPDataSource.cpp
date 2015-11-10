@@ -309,6 +309,11 @@ String8 ChromiumHTTPDataSource::getUri() {
     return String8(mURI.c_str());
 }
 
+void ChromiumHTTPDataSource::setUri(AString url) {
+    Mutex::Autolock autoLock(mLock);
+    mURI = url;
+}
+
 String8 ChromiumHTTPDataSource::getMIMEType() const {
     Mutex::Autolock autoLock(mLock);
 

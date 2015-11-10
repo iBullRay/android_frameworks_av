@@ -190,6 +190,9 @@ private:
     bool mChannelMaskPresent;
     int32_t mChannelMask;
 
+    int32_t video_display_w;
+    int32_t video_display_h;
+
     status_t setCyclicIntraMacroblockRefresh(const sp<AMessage> &msg, int32_t mode);
     status_t allocateBuffersOnPort(OMX_U32 portIndex);
     status_t freeBuffersOnPort(OMX_U32 portIndex);
@@ -281,6 +284,11 @@ private:
     status_t requestIDRFrame();
 
     DISALLOW_EVIL_CONSTRUCTORS(ACodec);
+
+    sp<ABuffer> special_data;
+    int special_data_cpy_flag;
+    int mpeg4_special_data_flag;
+    bool mIsCodecNeedFlush;
 };
 
 }  // namespace android

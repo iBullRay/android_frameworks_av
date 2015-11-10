@@ -26,6 +26,7 @@ enum {
     kEncodingGBK                = (1 << 1),
     kEncodingBig5               = (1 << 2),
     kEncodingEUCKR              = (1 << 3),
+    kEncodingGB2312             = (1 << 4),
 
     kEncodingAll                = (kEncodingShiftJIS | kEncodingGBK | kEncodingBig5 | kEncodingEUCKR),
 };

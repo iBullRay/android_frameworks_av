@@ -105,8 +105,10 @@ status_t AACWriter::addSource(const sp<MediaSource> &source) {
     // Optionally, we want to check whether AACProfile is also set.
     if (meta->findInt32(kKeyAACProfile, &mAACProfile)) {
         ALOGI("AAC profile is changed to %d", mAACProfile);
+    } else {
+        ALOGW("AAC profile not find");
+        mAACProfile = OMX_AUDIO_AACObjectLC;
     }
-
     mSource = source;
     return OK;
 }

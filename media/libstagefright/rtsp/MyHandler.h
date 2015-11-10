@@ -135,7 +135,8 @@ struct MyHandler : public AHandler {
           mReceivedFirstRTPPacket(false),
           mSeekable(false),
           mKeepAliveTimeoutUs(kDefaultKeepAliveTimeoutUs),
-          mKeepAliveGeneration(0) {
+          mKeepAliveGeneration(0),
+          mPlayResponseParsed(false) {
         mNetLooper->setName("rtsp net");
         mNetLooper->start(false /* runOnCallingThread */,
                           false /* canCallJava */,
@@ -1237,6 +1238,8 @@ private:
 
     Vector<TrackInfo> mTracks;
 
+    bool mPlayResponseParsed;
+
     void setupTrack(size_t index) {
         sp<APacketSource> source =
             new APacketSource(mSessionDesc, index);
@@ -1407,6 +1410,13 @@ private:
     void onAccessUnitComplete(
             int32_t trackIndex, const sp<ABuffer> &accessUnit) {
         ALOGV("onAccessUnitComplete track %d", trackIndex);
+
+        if (!mPlayResponseParsed) {
+            ALOGI("play response is not parsed, storing accessunit");
+            TrackInfo *track = &mTracks.editItemAt(trackIndex);
+            track->mPackets.push_back(accessUnit);
+            return;
+        }
 
         if (mFirstAccessUnit) {
             sp<AMessage> msg = mNotify->dup();

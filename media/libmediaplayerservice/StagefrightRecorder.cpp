@@ -23,6 +23,8 @@
 #include <utils/Log.h>
 #include <media/AudioParameter.h>
 #include "StagefrightRecorder.h"
+#include "ActAudioEncoder.h"
+#include <media/stagefright/ActAudioWriter.h>
 
 #include <binder/IPCThreadState.h>
 #include <binder/IServiceManager.h>
@@ -845,6 +847,12 @@ status_t StagefrightRecorder::start() {
             status = startWAVERecording( );
             break;
 #endif
+        case OUTPUT_FORMAT_WAV:
+        case OUTPUT_FORMAT_MP3:            
+        case OUTPUT_FORMAT_WMA:
+            status = startActAudioRecording();
+			break;
+
         default:
             ALOGE("Unsupported output file format: %d", mOutputFormat);
             status = UNKNOWN_ERROR;
@@ -923,6 +931,8 @@ sp<MediaSource> StagefrightRecorder::createAudioSource() {
         return NULL;
     }
 
+    sp<MediaSource> audioEncoder;
+
     sp<MetaData> encMeta = new MetaData;
     const char *mime;
     switch (mAudioEncoder) {
@@ -982,6 +992,7 @@ sp<MediaSource> StagefrightRecorder::createAudioSource() {
     sp<MediaSource> audioEncoder =
         OMXCodec::Create(client.interface(), encMeta,
                          true /* createEncoder */, audioSource);
+    audioEncoder = new ActAudioEncoder(audioSource, encMeta);
 #ifdef QCOM_HARDWARE
     // If encoder could not be created (as in LPCM), then
     // use the AudioSource directly as the MediaSource.
@@ -1223,6 +1234,30 @@ status_t StagefrightRecorder::startMPEG2TSRecording() {
     }
 
     mWriter = writer;
+
+    return mWriter->start();
+}
+
+status_t StagefrightRecorder::startActAudioRecording() {
+    sp<MediaSource> audioEncoder = createAudioSource();
+
+    if (audioEncoder == NULL) {
+        return UNKNOWN_ERROR;
+    }
+
+    mWriter = new ActAudioWriter(dup(mOutputFd));
+
+    mWriter->addSource(audioEncoder);
+
+    if (mMaxFileDurationUs != 0) {
+        mWriter->setMaxFileDuration(mMaxFileDurationUs);
+    }
+
+    if (mMaxFileSizeBytes != 0) {
+        mWriter->setMaxFileSize(mMaxFileSizeBytes);
+    }
+
+    mWriter->setListener(mListener);
 
     return mWriter->start();
 }
@@ -1509,10 +1544,18 @@ status_t StagefrightRecorder::setupCameraSource(
             return BAD_VALUE;
         }
 
-        mCameraSourceTimeLapse = CameraSourceTimeLapse::CreateFromCamera(
+        if (mVideoEncoder == VIDEO_ENCODER_H264) {
+            mCameraSourceTimeLapse = CameraSourceTimeLapse::CreateFromCamera(
                 mCamera, mCameraProxy, mCameraId,
                 videoSize, mFrameRate, mPreviewSurface,
                 mTimeBetweenTimeLapseFrameCaptureUs);
+        } else {
+            mCameraSourceTimeLapse = CameraSourceTimeLapse::CreateFromCamera(
+                mCamera, mCameraProxy, mCameraId,
+                videoSize, (mFrameRate|0x80000000), mPreviewSurface,
+                mTimeBetweenTimeLapseFrameCaptureUs);
+        }
+
         *cameraSource = mCameraSourceTimeLapse;
     } else {
         bool useMeta = true;
@@ -1523,9 +1566,15 @@ status_t StagefrightRecorder::setupCameraSource(
             useMeta = false;
         }
 #endif
-        *cameraSource = CameraSource::CreateFromCamera(
+        if (mVideoEncoder == VIDEO_ENCODER_H264) {
+            *cameraSource = CameraSource::CreateFromCamera(
                 mCamera, mCameraProxy, mCameraId, videoSize, mFrameRate,
-                mPreviewSurface, useMeta /*storeMetaDataInVideoBuffers*/);
+                mPreviewSurface, true /*storeMetaDataInVideoBuffers*/);
+        } else {
+            *cameraSource = CameraSource::CreateFromCamera(
+                mCamera, mCameraProxy, mCameraId, videoSize, mFrameRate,
+                mPreviewSurface, false /*storeMetaDataInVideoBuffers*/);
+        }
     }
     mCamera.clear();
     mCameraProxy.clear();
@@ -1594,6 +1643,21 @@ status_t StagefrightRecorder::setupVideoEncoder(
     CHECK(meta->findInt32(kKeyStride, &stride));
     CHECK(meta->findInt32(kKeySliceHeight, &sliceHeight));
     CHECK(meta->findInt32(kKeyColorFormat, &colorFormat));
+    {
+        int frameWidthActual = 0;
+        int frameHeightActual = 0;
+        bool ret = meta->findInt32('pwdt', &frameWidthActual);
+        ret = ret && meta->findInt32('phgt', &frameHeightActual);
+        if (ret) {
+            enc_meta->setInt32('pwdt', frameWidthActual);
+            enc_meta->setInt32('phgt', frameHeightActual);
+        }
+    }
+    
+    enc_meta->setInt32('ctlp', 0);
+    if (mCaptureTimeLapse) {
+        enc_meta->setInt32('ctlp', 1);
+    }
 
     enc_meta->setInt32(kKeyWidth, width);
     enc_meta->setInt32(kKeyHeight, height);
@@ -1628,7 +1692,10 @@ status_t StagefrightRecorder::setupVideoEncoder(
     CHECK_EQ(client.connect(), (status_t)OK);
 
     uint32_t encoder_flags = 0;
+    encoder_flags |= OMXCodec::kOnlySubmitOneInputBufferAtOneTime;
+    ALOGE("mIsMetaDataStoredInVideoBuffers %d", mIsMetaDataStoredInVideoBuffers);
     if (mIsMetaDataStoredInVideoBuffers) {
+        encoder_flags |= OMXCodec::kHardwareCodecsOnly;
         encoder_flags |= OMXCodec::kStoreMetaDataInVideoBuffers;
     }
 
@@ -1669,6 +1736,10 @@ status_t StagefrightRecorder::setupAudioEncoder(const sp<MediaWriter>& writer) {
         case AUDIO_ENCODER_AAC:
         case AUDIO_ENCODER_HE_AAC:
         case AUDIO_ENCODER_AAC_ELD:
+        case AUDIO_ENCODER_PCM:
+        case AUDIO_ENCODER_ADPCM:
+        case AUDIO_ENCODER_MP3:
+        case AUDIO_ENCODER_WMA:
 #ifdef QCOM_HARDWARE
         case AUDIO_ENCODER_LPCM:
 #endif

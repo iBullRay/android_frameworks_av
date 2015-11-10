@@ -67,10 +67,18 @@ NuPlayer::NuPlayer()
       mResetPostponed(false),
       mSkipRenderingAudioUntilMediaTimeUs(-1ll),
       mSkipRenderingVideoUntilMediaTimeUs(-1ll),
+      mLastSegPosition(0ll),
+      mCurrentPosition(0ll),
+      mLastPositionUs(0ll),
+      mSeekFlag(false),
+      mSeekPostionFlag(false),
       mVideoLateByUs(0ll),
       mNumFramesTotal(0ll),
       mNumFramesDropped(0ll),
-      mVideoScalingMode(NATIVE_WINDOW_SCALING_MODE_SCALE_TO_WINDOW) {
+      mVideoScalingMode(NATIVE_WINDOW_SCALING_MODE_SCALE_TO_WINDOW),
+      mMaxSegDuration(0ll),
+      mChangingVideoSurfaceTexture(false),
+      mDuration(0x80000000000) {
 }
 
 NuPlayer::~NuPlayer() {
@@ -108,6 +116,10 @@ static bool IsHTTPLiveURL(const char *url) {
         }
 
         if (strstr(url,"m3u8")) {
+            return true;
+        }
+
+        if (strstr(url,"m3u")) {
             return true;
         }
     }
@@ -242,6 +254,9 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
 
             mNativeWindow = static_cast<NativeWindowWrapper *>(obj.get());
 
+            if (mVideoDecoder != NULL) 
+                mChangingVideoSurfaceTexture = true;
+
             // XXX - ignore error from setVideoScalingMode for now
             setVideoScalingMode(mVideoScalingMode);
             break;
@@ -365,13 +380,12 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
             } else if (what == ACodec::kWhatEOS) {
                 int32_t err;
                 CHECK(codecRequest->findInt32("err", &err));
-
-                if (err == ERROR_END_OF_STREAM) {
-                    ALOGV("got %s decoder EOS", audio ? "audio" : "video");
-                } else {
-                    ALOGV("got %s decoder EOS w/ error %d",
-                         audio ? "audio" : "video",
-                         err);
+                
+                ALOGE("kWhatEOS: %s decoder meet: %s 0x%x", audio ? "audio" : "video", (err == ERROR_END_OF_STREAM)  ? "EOS" : "error");
+                if ((err == ERROR_END_OF_STREAM) || (err == ERROR_IO) || (err == ERROR_UNSUPPORTED)) {
+                    if (!IsFlushingState(audio ? mFlushingAudio : mFlushingVideo)) {
+                        mRenderer->queueEOS(audio, err);
+                    }
                 }
 
                 mRenderer->queueEOS(audio, err);
@@ -492,7 +506,21 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
                 ALOGE("Received error from %s decoder, aborting playback.",
                      audio ? "audio" : "video");
 
-                mRenderer->queueEOS(audio, UNKNOWN_ERROR);
+                int32_t err;
+                CHECK(codecRequest->findInt32("err", &err));
+                ALOGW("err: %d", err);
+                if (err == OMX_ErrorallocateBuffersFailed) {
+                    ALOGW("%d %d %d", mChangingVideoSurfaceTexture, mFlushingAudio, mFlushingVideo);
+                    usleep(3000000);
+                    if (mFlushingAudio ==  NONE && mFlushingVideo == NONE) {
+                        ALOGW("OMX_ErrorallocateBuffersFailed flushDecoder");
+                        flushDecoder(false, true);
+                        mFlushingAudio = SHUT_DOWN;
+                        mChangingVideoSurfaceTexture = false;
+                    }
+                } else {
+                    mRenderer->queueEOS(audio, UNKNOWN_ERROR);
+                }
             } else if (what == ACodec::kWhatDrainThisBuffer) {
                 renderBuffer(audio, codecRequest);
             } else {
@@ -543,10 +571,23 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
                 if (mDriver != NULL) {
                     sp<NuPlayerDriver> driver = mDriver.promote();
                     if (driver != NULL) {
-                        driver->notifyPosition(positionUs);
+                        if (mSeekPostionFlag == true) {
+                            mLastPositionUs = positionUs;
+                            mSeekPostionFlag = false;
+                        }
 
-                        driver->notifyFrameStats(
-                                mNumFramesTotal, mNumFramesDropped);
+                        int64_t durationUs;
+                        if (mMaxSegDuration != 0) {
+                            if (positionUs - mLastPositionUs < 2 * 1000 * 1000 &&
+                                positionUs - mLastPositionUs > -1 * 1000 * 1000) {     
+                                    mCurrentPosition += positionUs - mLastPositionUs;
+                            }
+                        } else {
+                            mCurrentPosition = positionUs;
+                        }
+                        mLastPositionUs = positionUs;
+                        driver->notifyPosition(mCurrentPosition);                 
+                        driver->notifyFrameStats(mNumFramesTotal, mNumFramesDropped);
                     }
                 }
             } else if (what == Renderer::kWhatFlushComplete) {
@@ -620,14 +661,41 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
             int64_t seekTimeUs;
             CHECK(msg->findInt64("seekTimeUs", &seekTimeUs));
 
+            bool skipSeek = false;
+
             ALOGV("kWhatSeek seekTimeUs=%lld us (%.2f secs)",
                  seekTimeUs, seekTimeUs / 1E6);
 
-            mSource->seekTo(seekTimeUs);
+            if (mMaxSegDuration && 
+                seekTimeUs - mCurrentPosition < 5 * 1000 * 1000 && 
+                seekTimeUs - mCurrentPosition > -5 * 1000 * 1000) {
+                    ALOGW("====dismiss a nonsense seek");
+                    skipSeek = true;
+            }
+
+            if (mDuration && 
+                seekTimeUs - mDuration < 2 * 1000 * 1000 && 
+                seekTimeUs - mDuration > -5 * 1000 * 1000) {
+                    ALOGW("=== in file end so do not skip");
+                    skipSeek = false;
+            }
+
+            if (mChangingVideoSurfaceTexture) {
+                ALOGW("kWhatSeek seek must be done because mChangingVideoSurfaceTexture");
+                skipSeek = false;
+            }
+
+            if (skipSeek == false) {
+                mSeekFlag = true;
+                mSeekingTime = seekTimeUs;
+                mSource->seekTo(seekTimeUs);
+                mRenderer->Seek(true);
+            }
 
             if (mDriver != NULL) {
                 sp<NuPlayerDriver> driver = mDriver.promote();
                 if (driver != NULL) {
+                    driver->notifyPosition(seekTimeUs);
                     driver->notifySeekComplete();
                 }
             }
@@ -742,8 +810,33 @@ status_t NuPlayer::instantiateDecoder(bool audio, sp<Decoder> *decoder) {
 
     if (!audio) {
         AString mime;
+        int64_t seekedListTimeBase = 0ll;
+        int64_t maxSegDuration = 0ll;
         CHECK(format->findString("mime", &mime));
         mVideoIsAVC = !strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mime.c_str());
+        format->findInt64("nu-seeked-time", &seekedListTimeBase);
+        format->findInt64("max-seg-duration", &maxSegDuration);
+
+        mMaxSegDuration = maxSegDuration;
+        if (mSeekFlag == true ) {
+            if (maxSegDuration) {
+                if (mChangingVideoSurfaceTexture) {
+                    mCurrentPosition = mSeekingTime - 1000 * 1000;
+                    mRenderer->DiscardForward(mSeekingTime - seekedListTimeBase);
+                    ALOGW("ChangingVideoSurfaceTexture from %lld to %lld because of seek", seekedListTimeBase, mSeekingTime);
+                } else {
+                    mCurrentPosition = seekedListTimeBase;
+                }
+            } else {
+                mCurrentPosition = mSeekingTime;
+            }
+            mChangingVideoSurfaceTexture = false;
+            mLastSegPosition = seekedListTimeBase;
+            mSeekFlag = false;
+            mSeekPostionFlag = true;
+            mSeekingTime = 0;
+            mRenderer->Seek(false);
+        }
     }
 
     sp<AMessage> notify =
@@ -860,7 +953,7 @@ status_t NuPlayer::feedDecoderInputData(bool audio, const sp<AMessage> &msg) {
 
         dropAccessUnit = false;
         if (!audio
-                && mVideoLateByUs > 100000ll
+                && mVideoLateByUs > 2000000ll
                 && mVideoIsAVC
                 && !IsAVCReferenceFrame(accessUnit)) {
             dropAccessUnit = true;

@@ -27,6 +27,7 @@
 #include <media/stagefright/foundation/AMessage.h>
 #include <media/stagefright/MetaData.h>
 #include <media/stagefright/Utils.h>
+#include <media/stagefright/MediaDefs.h>
 
 #ifdef QCOM_ENHANCED_AUDIO
 #include <QCMediaDefs.h>
@@ -88,6 +89,19 @@ status_t convertMetaDataToMessage(
     if (meta->findInt64(kKeyDuration, &durationUs)) {
         msg->setInt64("durationUs", durationUs);
     }
+    int act_audio_flag = 0;
+    act_audio_flag = (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_MP3, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AAC, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_PCM, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_OGG, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_DTS, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AC3, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_APE, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_FLAC, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_MPC, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AIFF, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AMR, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_ALAC, mime));
 
     if (!strncasecmp("video/", mime, 6)) {
         int32_t width, height;
@@ -96,6 +110,14 @@ status_t convertMetaDataToMessage(
 
         msg->setInt32("width", width);
         msg->setInt32("height", height);
+
+        int64_t seekedListTimeBase = 0;
+        int64_t maxSegDuration = 0ll;		
+        meta->findInt64(kKeyActNuSeekedListTimeBase, &seekedListTimeBase);
+        meta->findInt64(kKeyActMaxSegDuration, &maxSegDuration);
+        msg->setInt64("nu-seeked-time", seekedListTimeBase);
+        msg->setInt64("max-seg-duration", maxSegDuration);
+
     } else if (!strncasecmp("audio/", mime, 6)) {
         int32_t numChannels, sampleRate;
         CHECK(meta->findInt32(kKeyChannelCount, &numChannels));
@@ -251,22 +273,38 @@ status_t convertMetaDataToMessage(
         buffer->meta()->setInt64("timeUs", 0);
         msg->setBuffer("csd-1", buffer);
     } else if (meta->findData(kKeyESDS, &type, &data, &size)) {
-        ESDS esds((const char *)data, size);
-        CHECK_EQ(esds.InitCheck(), (status_t)OK);
+        if (act_audio_flag == 0) {
+            ESDS esds((const char *)data, size);
+            CHECK_EQ(esds.InitCheck(), (status_t)OK);
 
-        const void *codec_specific_data;
-        size_t codec_specific_data_size;
-        esds.getCodecSpecificInfo(
-                &codec_specific_data, &codec_specific_data_size);
+            const void *codec_specific_data;
+            size_t codec_specific_data_size;
+            esds.getCodecSpecificInfo(
+                    &codec_specific_data, &codec_specific_data_size);
 
-        sp<ABuffer> buffer = new ABuffer(codec_specific_data_size);
+            sp<ABuffer> buffer = new ABuffer(codec_specific_data_size);
 
-        memcpy(buffer->data(), codec_specific_data,
-               codec_specific_data_size);
+            memcpy(buffer->data(), codec_specific_data,
+                   codec_specific_data_size);
 
+            buffer->meta()->setInt32("csd", true);
+            buffer->meta()->setInt64("timeUs", 0);
+            msg->setBuffer("csd-0", buffer);
+        }
+#if 0 // Web video uses act_audio
+    else {
+        sp<ABuffer> buffer = new ABuffer(size);
+        memcpy(buffer->data(), data,size);
+        ALOGD("----addr %x", (const char *)data);
+        ALOGD("----%x %x %x %x ",*(const char *)data, *(const char *)(data + 1), *(const char *)(data + 2), *(const char *)(data + 3));
+        ALOGD("----%x", *(const int *)data);
+        int addr_tmp = (int)(*(const int *)data);
+        ALOGD("----%x %x %x", *(int *)addr_tmp, *(int *)(addr_tmp + 4), *(int *)(addr_tmp + 8));
         buffer->meta()->setInt32("csd", true);
         buffer->meta()->setInt64("timeUs", 0);
         msg->setBuffer("csd-0", buffer);
+    }
+#endif
     } else if (meta->findData(kKeyVorbisInfo, &type, &data, &size)) {
         sp<ABuffer> buffer = new ABuffer(size);
         memcpy(buffer->data(), data, size);

@@ -470,6 +470,9 @@ private:
     static AudioEncoderCap* createDefaultLpcmEncoderCap();
 #endif
 
+    static AudioEncoderCap* createDefaultAACEncoderCap();
+    static AudioEncoderCap* createDefaultMP3EncoderCap();
+
     static int findTagForName(const NameToTagMap *map, size_t nMappings, const char *name);
 
     /**

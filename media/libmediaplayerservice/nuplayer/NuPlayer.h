@@ -137,6 +137,17 @@ private:
 
     int32_t mVideoScalingMode;
 
+    int64_t mMaxSegDuration;
+    int64_t mLastSegPosition;
+    int64_t mCurrentPosition;
+    int64_t mLastPositionUs;
+    int64_t mDuration;
+    int64_t mSeekingTime;
+    bool mSeekFlag;
+    bool mSeekIFrmFlag;
+    bool mSeekPostionFlag;
+    bool mChangingVideoSurfaceTexture;
+
     status_t instantiateDecoder(bool audio, sp<Decoder> *decoder);
 
     status_t feedDecoderInputData(bool audio, const sp<AMessage> &msg);

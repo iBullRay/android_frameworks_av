@@ -68,6 +68,10 @@ enum output_format {
     /* H.264/AAC data encapsulated in MPEG2/TS */
     OUTPUT_FORMAT_MPEG2TS = 8,
 
+    OUTPUT_FORMAT_WAV = 12,
+    OUTPUT_FORMAT_MP3 = 13,    
+    OUTPUT_FORMAT_WMA = 14,
+
 #ifdef QCOM_HARDWARE
     OUTPUT_FORMAT_QCP = 9, // QCP file format
     OUTPUT_FORMAT_THREE_GPP2 = 10, /*3GPP2*/
@@ -89,6 +93,11 @@ enum audio_encoder {
     AUDIO_ENCODER_QCELP = 7,
     AUDIO_ENCODER_LPCM = 8,
 #endif
+
+    AUDIO_ENCODER_PCM = 6,
+    AUDIO_ENCODER_ADPCM = 7,
+    AUDIO_ENCODER_MP3 = 8,    
+    AUDIO_ENCODER_WMA = 9,
 
     AUDIO_ENCODER_LIST_END // must be the last - used to validate the audio encoder type
 };
@@ -173,6 +182,10 @@ enum media_recorder_info_type {
 
     MEDIA_RECORDER_INFO_MAX_DURATION_REACHED      = 800,
     MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED      = 801,
+
+    MEDIA_RECORDER_INFO_COMPLETION_STATUS         = 802,
+    MEDIA_RECORDER_INFO_PROGRESS_FRAME_STATUS     = 803,
+    MEDIA_RECORDER_INFO_PROGRESS_TIME_STATUS      = 804,
 
     // All track related informtional events start here
     MEDIA_RECORDER_TRACK_INFO_LIST_START           = 1000,

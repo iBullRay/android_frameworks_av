@@ -64,7 +64,7 @@ private:
     struct CodecInfo {
         AString mName;
         bool mIsEncoder;
-        uint32_t mTypes;
+        uint64_t mTypes;
         uint32_t mQuirks;
     };
 

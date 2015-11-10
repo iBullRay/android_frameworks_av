@@ -53,6 +53,7 @@ void NuPlayer::Decoder::configure(const sp<AMessage> &format) {
         if (!format->findBuffer(StringPrintf("csd-%d", i).c_str(), &csd)) {
             break;
         }
+        if (strncasecmp(mime.c_str(), "video/avc", 9))
 
         mCSD.push(csd);
     }

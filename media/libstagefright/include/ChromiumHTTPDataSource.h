@@ -49,6 +49,8 @@ struct ChromiumHTTPDataSource : public HTTPBase {
 
     virtual String8 getUri();
 
+    virtual void setUri(AString url);
+
     virtual String8 getMIMEType() const;
 
     virtual status_t reconnectAtOffset(off64_t offset);

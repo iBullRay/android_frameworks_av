@@ -58,6 +58,10 @@ sp<MetaData> MakeAACCodecSpecificData(
         unsigned profile, unsigned sampling_freq_index,
         unsigned channel_configuration);
 
+sp<MetaData> MakeAACCodecSpecificData_1(void *init_buf,
+        unsigned profile, unsigned sampling_freq_index,
+        unsigned channel_configuration);
+
 // Given an MPEG4 video VOL-header chunk (starting with 0x00 0x00 0x01 0x2?)
 // parse it and fill in dimensions, returns true iff successful.
 bool ExtractDimensionsFromVOLHeader(

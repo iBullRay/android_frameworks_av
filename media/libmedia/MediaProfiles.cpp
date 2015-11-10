@@ -50,6 +50,7 @@ const MediaProfiles::NameToTagMap MediaProfiles::sAudioEncoderNameMap[] = {
 #ifdef QCOM_HARDWARE
     {"lpcm",  AUDIO_ENCODER_LPCM},
 #endif
+    {"mp3",   AUDIO_ENCODER_MP3},
 };
 
 const MediaProfiles::NameToTagMap MediaProfiles::sFileFormatMap[] = {
@@ -816,6 +817,7 @@ MediaProfiles::createDefaultAudioEncoders(MediaProfiles *profiles)
     profiles->mAudioEncoders.add(createDefaultAacEncoderCap());
     profiles->mAudioEncoders.add(createDefaultLpcmEncoderCap());
 #endif
+    profiles->mAudioEncoders.add(createDefaultMP3EncoderCap());
 }
 
 /*static*/ void
@@ -865,6 +867,13 @@ MediaProfiles::createDefaultLpcmEncoderCap()
         AUDIO_ENCODER_LPCM, 768000, 4608000, 48000, 48000, 1, 6);
 }
 #endif
+
+/*static*/ MediaProfiles::AudioEncoderCap*
+MediaProfiles::createDefaultMP3EncoderCap()
+{
+    return new MediaProfiles::AudioEncoderCap(
+        AUDIO_ENCODER_MP3, 5525, 73200, 8000, 48000, 1, 2);
+}
 
 /*static*/ void
 MediaProfiles::createDefaultImageEncodingQualityLevels(MediaProfiles *profiles)

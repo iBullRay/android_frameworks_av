@@ -501,6 +501,7 @@ MediaPlayerService::Client::Client(
     mAudioSessionId = audioSessionId;
     mUID = uid;
     mRetransmitEndpointValid = false;
+    mPlayerType = STAGEFRIGHT_PLAYER;
 
 #if CALLBACK_ANTAGONIZER
     ALOGD("create Antagonizer");
@@ -641,6 +642,10 @@ status_t MediaPlayerService::Client::setDataSource(
         return mStatus;
     } else {
         player_type playerType = MediaPlayerFactory::getPlayerType(this, url);
+        // Create the right type of player
+        if (playerType != NU_PLAYER) {
+            playerType = (mPlayerType == NU_PLAYER) ? NU_PLAYER : playerType;
+        }
         sp<MediaPlayerBase> p = setDataSource_pre(playerType);
         if (p == NULL) {
             return NO_INIT;

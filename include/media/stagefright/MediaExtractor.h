@@ -20,6 +20,7 @@
 #define MEDIA_EXTRACTOR_H_
 
 #include <utils/RefBase.h>
+#include <utils/Errors.h>
 
 namespace android {
 
@@ -30,7 +31,7 @@ class MetaData;
 class MediaExtractor : public RefBase {
 public:
     static sp<MediaExtractor> Create(
-            const sp<DataSource> &source, const char *mime = NULL);
+            const sp<DataSource> &source, const char *mime = NULL, void* cookie = NULL);
 
     virtual size_t countTracks() = 0;
     virtual sp<MediaSource> getTrack(size_t index) = 0;
@@ -44,6 +45,8 @@ public:
     // Return container specific meta-data. The default implementation
     // returns an empty metadata object.
     virtual sp<MetaData> getMetaData();
+
+    virtual status_t setAudioTrack(int index, int64_t cur_playing_time) { return NO_ERROR; }
 
     enum Flags {
         CAN_SEEK_BACKWARD  = 1,  // the "seek 10secs back button"
@@ -64,6 +67,12 @@ public:
     bool getDrmFlag() {
         return mIsDrm;
     }
+    virtual void setUsingMidwwareFlag(bool usingMidwareFlag) {
+        mIsMidware = usingMidwareFlag;
+    };
+    virtual bool getUsingMidwwareFlag() {
+        return mIsMidware;
+    }
     virtual char* getDrmTrackInfo(size_t trackID, int *len) {
         return NULL;
     }
@@ -74,6 +83,7 @@ protected:
 
 private:
     bool mIsDrm;
+    bool mIsMidware;
 
     MediaExtractor(const MediaExtractor &);
     MediaExtractor &operator=(const MediaExtractor &);

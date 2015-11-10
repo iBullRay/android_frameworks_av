@@ -321,16 +321,31 @@ status_t CameraSource::configureCamera(
     getSupportedVideoSizes(*params, &isSetVideoSizeSupportedByCamera, sizes);
     bool isCameraParamChanged = false;
     if (width != -1 && height != -1) {
-        if (!isVideoSizeSupported(width, height, sizes)) {
-            ALOGE("Video dimension (%dx%d) is unsupported", width, height);
-            return BAD_VALUE;
+        #if 0
+        if (mIsMetaDataStoredInVideoBuffers == false) {
+            if (!isVideoSizeSupported(width, height, sizes)) {
+                ALOGE("Video dimension (%dx%d) is unsupported", width, height);
+                return BAD_VALUE;
+            }
+            if (isSetVideoSizeSupportedByCamera) {
+                params->setVideoSize(width, height);
+            } else {
+                params->setPreviewSize(width, height);
+            }
+            isCameraParamChanged = true;
         }
-        if (isSetVideoSizeSupportedByCamera) {
-            params->setVideoSize(width, height);
-        } else {
-            params->setPreviewSize(width, height);
-        }
-        isCameraParamChanged = true;
+        else
+        #endif
+        {
+            //should use max preview size? fixed later
+            if (isVideoSizeSupported(width, height, sizes)) {
+                if (isSetVideoSizeSupportedByCamera) {
+                    params->setVideoSize(width, height);
+                } else {
+                    params->setPreviewSize(width, height);
+                }
+                isCameraParamChanged = true;
+            }
     } else if ((width == -1 && height != -1) ||
                (width != -1 && height == -1)) {
         // If one and only one of the width and height is -1
@@ -418,17 +433,30 @@ status_t CameraSource::checkVideoSize(
     // Check the actual video frame size against the target/requested
     // video frame size.
     if (width != -1 && height != -1) {
-        if (frameWidthActual != width || frameHeightActual != height) {
-            ALOGE("Failed to set video frame size to %dx%d. "
-                    "The actual video size is %dx%d ", width, height,
-                    frameWidthActual, frameHeightActual);
-            return UNKNOWN_ERROR;
+        #if 1
+        if(mIsMetaDataStoredInVideoBuffers == false) {
+            if (frameWidthActual != width || frameHeightActual != height) {
+                ALOGE("Failed to set video frame size to %dx%d. "
+                        "The actual video size is %dx%d ", width, height,
+                        frameWidthActual, frameHeightActual);
+                return UNKNOWN_ERROR;
+            }
         }
+        #endif
     }
 
     // Good now.
-    mVideoSize.width = frameWidthActual;
-    mVideoSize.height = frameHeightActual;
+    #if 0
+    if (mIsMetaDataStoredInVideoBuffers == false) {
+        mVideoSize.width = frameWidthActual;
+        mVideoSize.height = frameHeightActual;
+    }
+    else
+    #endif
+    {
+        mVideoSize.width = width;
+        mVideoSize.height = height;
+    }
     return OK;
 }
 
@@ -527,6 +555,7 @@ status_t CameraSource::initWithCameraAccess(
     if ((err = configureCamera(&params,
                     videoSize.width, videoSize.height,
                     frameRate))) {
+        mIsMetaDataStoredInVideoBuffers = false;
         return err;
     }
 
@@ -534,8 +563,10 @@ status_t CameraSource::initWithCameraAccess(
     CameraParameters newCameraParams(mCamera->getParameters());
     if ((err = checkVideoSize(newCameraParams,
                 videoSize.width, videoSize.height)) != OK) {
+        mIsMetaDataStoredInVideoBuffers = false;
         return err;
     }
+    mIsMetaDataStoredInVideoBuffers = false;
     if ((err = checkFrameRate(newCameraParams, frameRate)) != OK) {
         return err;
     }
@@ -572,6 +603,17 @@ status_t CameraSource::initWithCameraAccess(
     mMeta->setInt32(kKeyStride,      mVideoSize.width);
     mMeta->setInt32(kKeySliceHeight, mVideoSize.height);
     mMeta->setInt32(kKeyFrameRate,   mVideoFrameRate);
+    int frameWidthActual = 0;
+    int frameHeightActual = 0;
+    if (mIsMetaDataStoredInVideoBuffers == true) {
+        CameraParameters newCameraParams_ext(mCamera->getParameters());
+        //newCameraParams_ext.getPreviewSize(&frameWidthActual, &frameHeightActual);
+        frameWidthActual = newCameraParams_ext.getInt("record-video-width");
+        frameHeightActual = newCameraParams_ext.getInt("record-video-height");
+        mMeta->setInt32('pwdt', frameWidthActual);
+        mMeta->setInt32('phgt', frameHeightActual);
+    }
+    ALOGE("preview width source %d",frameWidthActual);
 
 #ifdef QCOM_HARDWARE
     QCUtilityClass::helper_CameraSource_hfr(params, mMeta);

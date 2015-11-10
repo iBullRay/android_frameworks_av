@@ -11,6 +11,13 @@ LOCAL_SRC_FILES:=                         \
         ACodec.cpp                        \
         AACExtractor.cpp                  \
         AACWriter.cpp                     \
+        ActAudioExtractor.cpp             \
+        ActDataSource.cpp                 \
+        ActAudioDownMix.cpp               \
+        ActAudioDecoder.cpp               \
+        ActAudioEncoder.cpp               \
+        ActAudioWriter.cpp                \
+        ActVideoExtractor.cpp             \
         AMRExtractor.cpp                  \
         AMRWriter.cpp                     \
         AudioPlayer.cpp                   \
@@ -185,6 +192,8 @@ endif
 ifeq ($(BOARD_USE_TI_DUCATI_H264_PROFILE), true)
 LOCAL_CFLAGS += -DUSE_TI_DUCATI_H264_PROFILE
 endif
+
+LOCAL_CFLAGS += -DTURN_ON_MIDDLEWARE_FLAG
 
 LOCAL_MODULE:= libstagefright
 

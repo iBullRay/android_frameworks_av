@@ -20,6 +20,9 @@
 #include <utils/Log.h>
 #include <cutils/properties.h>
 
+#include "include/ActAudioExtractor.h"
+#include "include/ActVideoExtractor.h"
+#include "include/AwesomePlayer.h"
 #include "include/AMRExtractor.h"
 #include "include/MP3Extractor.h"
 #include "include/MPEG4Extractor.h"
@@ -40,6 +43,7 @@
 
 #include "matroska/MatroskaExtractor.h"
 
+#include <media/stagefright/foundation/ADebug.h>
 #include <media/stagefright/foundation/AMessage.h>
 #include <media/stagefright/DataSource.h>
 #include <media/stagefright/MediaDefs.h>
@@ -59,15 +63,30 @@ uint32_t MediaExtractor::flags() const {
 
 // static
 sp<MediaExtractor> MediaExtractor::Create(
-        const sp<DataSource> &source, const char *mime) {
+        const sp<DataSource> &source, const char *mime, void* cookie) {
     sp<AMessage> meta;
 
+    bool usingMidwareFlag = false;
+    MediaExtractor *ret = NULL;
     String8 tmp;
+
+    bool isStreamFlag = false;
+    if (cookie != NULL) {
+        isStreamFlag = ((AwesomePlayer *)cookie)->getStreamingFlag();
+    }
+
+    if (mime != NULL) {
+        if (!strcasecmp(mime, "NuMediaExtractor")) {
+            isStreamFlag = true;
+            mime = NULL;
+        }
+    }
+
     if (mime == NULL) {
         float confidence;
         if (!source->sniff(&tmp, &confidence, &meta)) {
             ALOGV("FAILED to autodetect media content.");
-
+            goto middleware_extractor;
             return NULL;
         }
 
@@ -95,6 +114,67 @@ sp<MediaExtractor> MediaExtractor::Create(
             isDrm = true;
         } else {
             return NULL;
+        }
+    }
+
+#if 0
+    //parser and decoder: both playback and streaming use android's
+    if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_OGG)) {
+        //isStreamFlag = true;
+        if (isStreamFlag == true) {
+            ALOGD("use google ogg decoder");
+        } else {
+            ALOGD("use actions ogg decoder");
+        }
+    }
+#endif
+    //parser and decoder: both playback and streaming use android's
+    if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MPEG4)) {
+        // then check if can use middleware extractor
+        off64_t filelen = 0;
+        int rt = 0;
+        storage_io_t *storage_io = NULL;
+        const char mime_type[32] = "";
+        ALOGV("Create: then choose to use middleware parser mime: %s !!!", mime);
+
+        storage_io = create_storage_io();
+        if (storage_io == NULL)	{
+            return NULL;
+        }
+
+        filelen = init_storage_io(storage_io, source);
+        ALOGV("Create: fileLen: %lld", filelen);
+        rt = format_check(storage_io, mime_type);
+
+        if (mime_type[0] == '\0' || rt != 0) {
+            dispose_storage_io(storage_io);
+            ALOGE("no media content detected error !");
+            return NULL;
+        }
+
+        dispose_storage_io(storage_io);
+        ALOGV("Create: format mime_type: %s", mime_type);
+        if ((mime_type[0] >= 'a') && (mime_type[0] <= 'z')) {
+            ALOGE("mp4 is video");
+            if (filelen == 504541) {
+                isStreamFlag = true;
+                ALOGD("using mp4 for subtitle cts \n");
+            } else {
+                isStreamFlag = false;
+            }
+
+        } else if ( (mime_type[0] >= 'A') && (mime_type[0] <= 'Z')) {
+            ALOGE("mp4 is audio");
+        } else {
+            ALOGE("Creat: find extractor meet error !");
+        }
+    }
+
+    //parserand decoder: playback use middleware's and streaming use android's
+    if (isStreamFlag == false) {
+        if (strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_WVM)) {
+            mime = NULL;
+            goto middleware_extractor;
         }
     }
 
@@ -136,11 +216,12 @@ sp<MediaExtractor> MediaExtractor::Create(
     }
 
     if (ret != NULL) {
-       if (isDrm) {
-           ret->setDrmFlag(true);
-       } else {
-           ret->setDrmFlag(false);
-       }
+        ret->setUsingMidwwareFlag(false);
+        if (isDrm) {
+            ret->setDrmFlag(true);
+        } else {
+            ret->setDrmFlag(false);
+        }
     }
 
 #ifdef QCOM_HARDWARE
@@ -151,6 +232,56 @@ sp<MediaExtractor> MediaExtractor::Create(
 #else
     return ret;
 #endif
+
+middleware_extractor:
+
+    // then check if can use middleware extractor
+    off64_t filelen = 0;
+    int rt = 0;
+    storage_io_t *storage_io = NULL;
+    const char mime_type[32] = "";
+    ALOGV("Create: then choose to use middleware parser mime: %s !!!", mime);
+#if 0
+    if (mime != NULL) {
+        ALOGE("Create: fail to load %s", mime);
+        return NULL;
+    }
+#endif
+
+    storage_io = create_storage_io();
+    if (storage_io == NULL)	{
+        return NULL;
+    }
+
+    filelen = init_storage_io(storage_io, source);
+    ALOGV("Create: fileLen: %lld", filelen);
+    rt = format_check(storage_io, mime_type);
+
+    if (mime_type[0] == '\0' || rt != 0) {
+        dispose_storage_io(storage_io);
+        ALOGE("no media content detected error !");
+        return NULL;
+    }
+
+    dispose_storage_io(storage_io);
+    ALOGV("Create: format mime_type: %s", mime_type);
+    if ((mime_type[0] >= 'a') && (mime_type[0] <= 'z')) {
+        ALOGV("Create()->new ActVideoExtractor !");
+        ret = new ActVideoExtractor(source, mime_type, cookie);
+    } else if ((mime_type[0] >= 'A') && (mime_type[0] <= 'Z')) {
+        ret = new ActAudioExtractor(source, mime_type);
+    } else {
+        ALOGE("Creat: find extractor meet error!!!");
+        ret = NULL;
+    }
+
+    if (ret != NULL) {
+        isDrm ? ret->setDrmFlag(true) : ret->setDrmFlag(false);
+        ret->setUsingMidwwareFlag(true);
+        return ret;
+    }
+
+    return NULL;
 }
 
 }  // namespace android

@@ -45,13 +45,19 @@ struct LiveSession : public AHandler {
 
     void disconnect();
 
+    void retry(int);
+
     // Blocks until seek is complete.
     void seekTo(int64_t timeUs);
 
     status_t getDuration(int64_t *durationUs) const;
+    status_t getSeekedListTimeBase(int64_t *seekedListTimeBase);
+    status_t getMaxSegDuration(int64_t *maxSegDuration);
 
     bool isSeekable() const;
     bool hasDynamicDuration() const;
+
+    void flushSourceQueueBuffers();
 
 protected:
     virtual ~LiveSession();
@@ -60,7 +66,7 @@ protected:
 
 private:
     enum {
-        kMaxNumQueuedFragments = 3,
+        kMaxNumQueuedFragments = 16,
         kMaxNumRetries         = 5,
     };
 
@@ -94,6 +100,7 @@ private:
     ssize_t mPrevBandwidthIndex;
     int64_t mLastPlaylistFetchTimeUs;
     sp<M3UParser> mPlaylist;
+    sp<M3UParser> mMainPlaylist;
     int32_t mSeqNumber;
     int64_t mSeekTimeUs;
     int32_t mNumRetries;
@@ -105,8 +112,13 @@ private:
     bool mDurationFixed;  // Duration has been determined once and for all.
     bool mSeekDone;
     bool mDisconnectPending;
+    bool m_retrying;
+
+    int32_t seeking_count;
 
     int32_t mMonitorQueueGeneration;
+    int64_t mSeekedListTimeBase;
+    int64_t mMaxSegDuration;
 
     enum RefreshState {
         INITIAL_MINIMUM_RELOAD_DELAY,
@@ -127,6 +139,8 @@ private:
     status_t fetchFile(
             const char *url, sp<ABuffer> *out,
             int64_t range_offset = 0, int64_t range_length = -1);
+
+    status_t fetchFile2(sp<DataSource> source, int offset, sp<ABuffer> *out);
 
     sp<M3UParser> fetchPlaylist(const char *url, bool *unchanged);
     size_t getBandwidthIndex();

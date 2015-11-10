@@ -140,7 +140,8 @@ status_t NuMediaExtractor::setDataSource(int fd, off64_t offset, off64_t size) {
         return err;
     }
 
-    mImpl = MediaExtractor::Create(fileSource);
+    const char mime_type[32] = "NuMediaExtractor";
+    mImpl = MediaExtractor::Create(fileSource, mime_type);
 
     if (mImpl == NULL) {
         return ERROR_UNSUPPORTED;

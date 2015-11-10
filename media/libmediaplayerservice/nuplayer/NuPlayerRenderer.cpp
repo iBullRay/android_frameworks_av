@@ -49,7 +49,15 @@ NuPlayer::Renderer::Renderer(
       mPaused(false),
       mVideoRenderingStarted(false),
       mLastPositionUpdateUs(-1ll),
-      mVideoLateByUs(0ll) {
+      mVideoLateByUs(0ll),
+      mDropFrmNum(0),
+      m_discardFrame_audio(0),
+      m_discardFrame_video(0),
+      m_discardForward_audio(0),
+      m_discardForward_video(0),
+      last_mediaTimeUs_audio(0xfffff0000),
+      last_mediaTimeUs_video(0xfffff0000),
+      mSeeking(false) {
 }
 
 NuPlayer::Renderer::~Renderer() {
@@ -219,6 +227,7 @@ void NuPlayer::Renderer::signalAudioSinkChanged() {
 }
 
 bool NuPlayer::Renderer::onDrainAudioQueue() {
+    int skip = 0;
     uint32_t numFramesPlayed;
     if (mAudioSink->getPosition(&numFramesPlayed) != OK) {
         return false;
@@ -252,6 +261,11 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
             return false;
         }
 
+        if (shouldSkip(true, entry) == true) {
+            memset(entry->mBuffer->data(), 0, entry->mBuffer->size());
+            skip = 1;
+        }
+
         if (entry->mOffset == 0) {
             int64_t mediaTimeUs;
             CHECK(entry->mBuffer->meta()->findInt64("timeUs", &mediaTimeUs));
@@ -282,6 +296,7 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
             copy = numBytesAvailableToWrite;
         }
 
+        if (!skip)
         CHECK_EQ(mAudioSink->write(
                     entry->mBuffer->data() + entry->mOffset, copy),
                  (ssize_t)copy);
@@ -296,6 +311,7 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
 
         numBytesAvailableToWrite -= copy;
         size_t copiedFrames = copy / mAudioSink->frameSize();
+        if (!skip)
         mNumFramesWritten += copiedFrames;
     }
 
@@ -339,6 +355,13 @@ void NuPlayer::Renderer::postDrainVideoQueue() {
                 (mediaTimeUs - mAnchorTimeMediaUs) + mAnchorTimeRealUs;
 
             delayUs = realTimeUs - ALooper::GetNowUs();
+            if ((delayUs > 8000000ll)) {
+                delayUs = 100000ll;
+            } else if (delayUs > 10000ll) {	
+                delayUs -= 10000ll;
+            } else if (delayUs < 0ll) {
+                delayUs = 0ll;
+            }
         }
     }
 
@@ -348,6 +371,7 @@ void NuPlayer::Renderer::postDrainVideoQueue() {
 }
 
 void NuPlayer::Renderer::onDrainVideoQueue() {
+    int skip = 0;
     if (mVideoQueue.empty()) {
         return;
     }
@@ -371,19 +395,32 @@ void NuPlayer::Renderer::onDrainVideoQueue() {
     int64_t mediaTimeUs;
     CHECK(entry->mBuffer->meta()->findInt64("timeUs", &mediaTimeUs));
 
+    if (shouldSkip(false, entry) == true) {
+        skip = 1;
+    }
+
     int64_t realTimeUs = mediaTimeUs - mAnchorTimeMediaUs + mAnchorTimeRealUs;
     mVideoLateByUs = ALooper::GetNowUs() - realTimeUs;
 
     bool tooLate = (mVideoLateByUs > 40000);
 
-    if (tooLate) {
-        ALOGV("video late by %lld us (%.2f secs)",
-             mVideoLateByUs, mVideoLateByUs / 1E6);
-    } else {
+    int32_t drop_frame_flag = 0;
+
+    if ((tooLate && (mDropFrmNum < MAX_DROP_FRAME_NUM))) {
         ALOGV("rendering video at media time %.2f secs", mediaTimeUs / 1E6);
+        drop_frame_flag = 1;
     }
 
-    entry->mNotifyConsumed->setInt32("render", !tooLate);
+    if (drop_frame_flag == 0) {
+        if (mDropFrmNum == MAX_DROP_FRAME_NUM) {
+            mDropFrmNum = 0;
+        }
+    } else if (drop_frame_flag == 1) {
+        mDropFrmNum ++;
+    }
+
+    mVideoFrmNum ++;
+    entry->mNotifyConsumed->setInt32("render", !drop_frame_flag && !skip);
     entry->mNotifyConsumed->post();
     mVideoQueue.erase(mVideoQueue.begin());
     entry = NULL;
@@ -393,6 +430,7 @@ void NuPlayer::Renderer::onDrainVideoQueue() {
         notifyVideoRenderingStart();
     }
 
+    if (!skip)
     notifyPosition();
 }
 
@@ -668,6 +706,71 @@ void NuPlayer::Renderer::onResume() {
     if (!mVideoQueue.empty()) {
         postDrainVideoQueue();
     }
+}
+
+#undef LOGW
+#define LOGW(x, ...)
+
+void NuPlayer::Renderer::Seek(bool Seeking) {
+    LOGW("seekbar seek");
+    mSeeking = Seeking;
+}
+
+void NuPlayer::Renderer::DiscardForward(int64_t time) {
+    LOGW("seekbar seek");
+    if (time > 30*1000*1000)
+        return;
+    m_discardForward_video = time - 2000 * 1000;
+    m_discardForward_audio = time - 2000 * 1000;
+}
+
+bool NuPlayer::Renderer::shouldSkipNotify() {
+    LOGW("seekbar shouldSkipNotify %lld %lld", m_discardFrame_audio, m_discardFrame_video);
+    return (m_discardFrame_video > 0) && (m_discardFrame_audio > 0);
+}
+
+bool NuPlayer::Renderer::shouldSkip(bool audio,QueueEntry *entry) {
+    int64_t mediaTimeUs;
+    CHECK(entry->mBuffer->meta()->findInt64("timeUs", &mediaTimeUs));
+    if (audio) {
+        if (mSeeking) {
+            last_mediaTimeUs_audio = mediaTimeUs;		
+            LOGW("seekbar skip audio %lld", mediaTimeUs);	
+            return true; 	
+        }
+
+        if (m_discardForward_audio > 0) { 
+            if (mediaTimeUs - last_mediaTimeUs_audio > 0 && 
+                mediaTimeUs - last_mediaTimeUs_audio < 1000*1000)
+                m_discardForward_audio -= (mediaTimeUs - last_mediaTimeUs_audio);
+                last_mediaTimeUs_audio = mediaTimeUs;
+                LOGW("seekbar forward audio %lld now:%lld last:%lld",m_discardForward_audio,mediaTimeUs,last_mediaTimeUs_audio);		
+                return true;
+        }
+
+        last_mediaTimeUs_audio = mediaTimeUs;
+        LOGW("seekbar render audio %lld",mediaTimeUs);
+    } else {
+        if (mSeeking) {
+            last_mediaTimeUs_video = mediaTimeUs;		
+            LOGW("seekbar skip video %lld %lld", mediaTimeUs);	
+            return true; 	
+        }
+
+        if (m_discardForward_video > 0) { 
+            if (mediaTimeUs - last_mediaTimeUs_video > 0 && 
+                mediaTimeUs - last_mediaTimeUs_video < 1000*1000)
+                m_discardForward_video -= (mediaTimeUs - last_mediaTimeUs_video);
+                last_mediaTimeUs_video = mediaTimeUs;
+                LOGW("seekbar forward video %lld now:%lld last:%lld",m_discardForward_video,mediaTimeUs,last_mediaTimeUs_video);		
+                return true;
+        }
+
+        last_mediaTimeUs_video = mediaTimeUs;
+        LOGW("seekbar render video %lld",mediaTimeUs);
+    }
+
+    return false;
 }
 
 }  // namespace android

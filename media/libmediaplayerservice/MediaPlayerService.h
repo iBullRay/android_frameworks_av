@@ -410,6 +410,7 @@ private:
                     bool                        mLoop;
                     int32_t                     mConnId;
                     int                         mAudioSessionId;
+                    int                         mPlayerType;
                     uid_t                       mUID;
                     sp<ANativeWindow>           mConnectedWindow;
                     sp<IBinder>                 mConnectedWindowBinder;
