@@ -2124,6 +2124,7 @@ void AwesomePlayer::onVideoEvent() {
         mTimeSourceDeltaUs = realTimeUs - mediaTimeUs;
     }
 
+#ifndef TURN_ON_MIDDLEWARE_FLAG
     if (wasSeeking == SEEK_VIDEO_ONLY) {
         nowUs = ts->getRealTimeUs() - mTimeSourceDeltaUs;
 
@@ -2135,6 +2136,7 @@ void AwesomePlayer::onVideoEvent() {
             ALOGI("after SEEK_VIDEO_ONLY we're late by %.2f secs", latenessUs / 1E6);
         }
     }
+#endif
 
     if (wasSeeking == NO_SEEK) {
         // Let's display the first frame after seeking right away.
@@ -2145,6 +2147,7 @@ void AwesomePlayer::onVideoEvent() {
 
         ATRACE_INT("Video Lateness (ms)", latenessUs / 1E3);
 
+#ifndef TURN_ON_MIDDLEWARE_FLAG
         if (latenessUs > 500000ll
                 && mAudioPlayer != NULL
                 && mAudioPlayer->getMediaTimeMapping(
@@ -2168,6 +2171,7 @@ void AwesomePlayer::onVideoEvent() {
                 ALOGI("we're very late (%.2f secs)", latenessUs / 1E6);
             }
         }
+#endif
 
         if (latenessUs > 40000) {
             // We're more than 40ms late.
@@ -2591,8 +2595,12 @@ status_t AwesomePlayer::finishSetDataSource_l() {
             mWVMExtractor->setUID(mUID);
         extractor = mWVMExtractor;
     } else {
+    #ifndef TURN_ON_MIDDLEWARE_FLAG
         extractor = MediaExtractor::Create(
                 dataSource, sniffedMIME.empty() ? NULL : sniffedMIME.c_str());
+    #else
+        extractor = MediaExtractor::Create(dataSource, sniffedMIME.empty() ? NULL : sniffedMIME.c_str(), this);
+    #endif
 
         if (extractor == NULL) {
             return UNKNOWN_ERROR;

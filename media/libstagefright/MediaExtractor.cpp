@@ -86,8 +86,11 @@ sp<MediaExtractor> MediaExtractor::Create(
         float confidence;
         if (!source->sniff(&tmp, &confidence, &meta)) {
             ALOGV("FAILED to autodetect media content.");
+        #ifdef TURN_ON_MIDDLEWARE_FLAG
             goto middleware_extractor;
+        #else
             return NULL;
+        #endif
         }
 
         mime = tmp.string();
