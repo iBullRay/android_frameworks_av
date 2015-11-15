@@ -74,11 +74,15 @@ LOCAL_SRC_FILES+=                         \
 endif
 
 LOCAL_C_INCLUDES:= \
+        $(call include-path-for, alsp) \
         $(TOP)/frameworks/av/include/media/stagefright/timedtext \
         $(TOP)/frameworks/native/include/media/hardware \
         $(TOP)/external/flac/include \
         $(TOP)/external/tremolo \
-        $(TOP)/external/openssl/include
+        $(TOP)/external/openssl/include \
+        $(TOP)/frameworks/av/media/libstagefright/vendor/al_libc \
+        $(TOP)/frameworks/av/include/alsp/inc \
+        $(TOP)/frameworks/av/include/alsp/inc/common
 
 ifneq ($(TI_CUSTOM_DOMX_PATH),)
 LOCAL_C_INCLUDES += $(TI_CUSTOM_DOMX_PATH)/omx_core/inc
@@ -175,7 +179,8 @@ LOCAL_SHARED_LIBRARIES += \
         libstagefright_enc_common \
         libstagefright_avc_common \
         libstagefright_foundation \
-        libdl
+        libdl \
+        libalc
 
 LOCAL_CFLAGS += -Wno-multichar
 
