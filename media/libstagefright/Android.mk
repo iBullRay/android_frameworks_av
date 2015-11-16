@@ -80,7 +80,7 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/flac/include \
         $(TOP)/external/tremolo \
         $(TOP)/external/openssl/include \
-        $(TOP)/frameworks/av/media/libstagefright/vendor/al_libc \
+        $(TOP)/frameworks/av/media/libstagefright/al_libc \
         $(TOP)/frameworks/av/include/alsp/inc \
         $(TOP)/frameworks/av/include/alsp/inc/common
 
