@@ -261,7 +261,7 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
             return false;
         }
 
-        if (shouldSkip(true, entry) == true) {
+        if (shouldSkip(true /* audio */, entry) == true) {
             memset(entry->mBuffer->data(), 0, entry->mBuffer->size());
             skip = 1;
         }
@@ -315,6 +315,7 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
         mNumFramesWritten += copiedFrames;
     }
 
+    if (!skip)
     notifyPosition();
 
     return !mAudioQueue.empty();
@@ -395,7 +396,7 @@ void NuPlayer::Renderer::onDrainVideoQueue() {
     int64_t mediaTimeUs;
     CHECK(entry->mBuffer->meta()->findInt64("timeUs", &mediaTimeUs));
 
-    if (shouldSkip(false, entry) == true) {
+    if (shouldSkip(false /* video */, entry) == true) {
         skip = 1;
     }
 

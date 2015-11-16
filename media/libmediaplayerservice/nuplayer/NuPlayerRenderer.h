@@ -123,8 +123,6 @@ private:
     int64_t m_discardForward_audio;
     int64_t last_mediaTimeUs_audio;
     int64_t last_mediaTimeUs_video;
-    bool onDrainAudioQueue();
-    void postDrainAudioQueue(int64_t delayUs = 0);
 
     bool onDrainAudioQueue();
     void postDrainAudioQueue(int64_t delayUs = 0);
