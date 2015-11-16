@@ -11,8 +11,8 @@ LOCAL_SRC_FILES:=                 \
 
 LOCAL_C_INCLUDES:= \
     $(TOP)/frameworks/av/include/alsp/inc \
-	$(TOP)/frameworks/av/media/libstagefright \
-	$(TOP)/frameworks/native/include/media/openmax
+    $(TOP)/frameworks/av/media/libstagefright \
+    $(TOP)/frameworks/native/include/media/openmax
 
 LOCAL_MODULE:= libstagefright_mpeg2ts
 
