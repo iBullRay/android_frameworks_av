@@ -212,9 +212,13 @@ sp<MetaData> ActAudioExtractor::getMetaData() {
         return meta;
     }
     int i = 0;
-    extension_type_t format2MIME[14] = {
+    extension_type_t format2MIME[18] = {
         {PARSER_EXT_MP3, "audio/MP3"},
         {PARSER_EXT_AAC, "audio/AAC"},
+        {PARSER_EXT_WMA, "audio/WMASTD"},
+        {PARSER_EXT_WMALSL, "audio/WMALSL"},
+        {PARSER_EXT_WMAPRO, "audio/WMAPRO"},
+        {PARSER_EXT_RMA, "audio/COOK"},
         {PARSER_EXT_WAV, "audio/PCM"},
         {PARSER_EXT_OGG, "audio/OGG"},
         {PARSER_EXT_AMR, "audio/AMR"},

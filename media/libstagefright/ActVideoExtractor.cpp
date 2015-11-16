@@ -69,7 +69,10 @@ namespace android {
 static const ExtToMime_t kExtToMime[] = {
     {"", "video/unsupport",  CODEC_UNKNOWN},
     {"h264", MEDIA_MIMETYPE_VIDEO_AVC, CODEC_ACTIONS},
+    {"h263", MEDIA_MIMETYPE_VIDEO_H263, CODEC_ACTIONS},
     {"divx", MEDIA_MIMETYPE_VIDEO_MPEG4, CODEC_ACTIONS},
+    {"div3", MEDIA_MIMETYPE_VIDEO_DIV3, CODEC_ACTIONS},
+    {"msm4", MEDIA_MIMETYPE_VIDEO_DIV3, CODEC_ACTIONS},
     {"mpeg", MEDIA_MIMETYPE_VIDEO_MPEG2, CODEC_ACTIONS},
     {"flv", MEDIA_MIMETYPE_VIDEO_FLV, CODEC_ACTIONS},
     {"wmv" , MEDIA_MIMETYPE_VIDEO_WMV, CODEC_ACTIONS},
@@ -2088,18 +2091,9 @@ void ActVideoExtractor::addTracks()
         ALOGW(" Not support video format(%s)",pv->extension);       
     }
     meta->setCString(kKeyMIMEType, mEtm->mime);  
-    if (!strcmp(mEtm->mime, MEDIA_MIMETYPE_VIDEO_VP6)
-        || !strcmp(mEtm->mime, MEDIA_MIMETYPE_VIDEO_VP8)
-        || !strcmp(mEtm->mime, MEDIA_MIMETYPE_VIDEO_WMV8))
-    {
-        ALOGD("kKeyWidth/kKeyHeight set with 16 alignment");
-        meta->setInt32(kKeyWidth, /*(pv->width + 15)&(~15)*/pv->width);
-        meta->setInt32(kKeyHeight, /*(pv->height + 15)&(~15)*/pv->height);
-    } else {
-        ALOGD("kKeyWidth/kKeyHeight set with no alignment");
-        meta->setInt32(kKeyWidth, /*(pv->width + 15)&(~15)*/pv->width);
-        meta->setInt32(kKeyHeight, /*(pv->height + 15)&(~15)*/pv->height);
-    }
+    ALOGD("kKeyWidth/kKeyHeight set with no alignment");
+    meta->setInt32(kKeyWidth, /*(pv->width + 15)&(~15)*/pv->width);
+    meta->setInt32(kKeyHeight, /*(pv->height + 15)&(~15)*/pv->height);
     meta->setInt32(kKeyBitRate, (int32_t)m_mi.parser_video.video_bitrate);
     meta->setInt64(kKeyActFrmRate, (int64_t)m_mi.parser_video.frame_rate);
     mVDuration = mADuration = ((int64_t)(m_mi.total_time))*1000;

@@ -92,6 +92,10 @@ status_t convertMetaDataToMessage(
     int act_audio_flag = 0;
     act_audio_flag = (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_MP3, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AAC, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_WMASTD, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_WMALSL, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_WMAPRO, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_COOK, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_PCM, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_OGG, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_DTS, mime)) \
@@ -101,7 +105,8 @@ status_t convertMetaDataToMessage(
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_MPC, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AIFF, mime)) \
                     || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AMR, mime)) \
-                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_ALAC, mime));
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_ALAC, mime)) \
+                    || (!strcasecmp(MEDIA_MIMETYPE_AUDIO_ACT_AWB, mime));
 
     if (!strncasecmp("video/", mime, 6)) {
         int32_t width, height;
