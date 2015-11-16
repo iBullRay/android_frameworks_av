@@ -484,7 +484,7 @@ sp<ABuffer> ElementaryStreamQueue::dequeueAccessUnitAAC() {
             mBuffer->size() - offset);
     mBuffer->setRange(0, mBuffer->size() - offset);
 
-    if (timeUs == 0lld) {
+    if (timeUs == 0ll) {
         ALOGD("tsa %lld", timeUs);
         timeUs = 10;
 	}
