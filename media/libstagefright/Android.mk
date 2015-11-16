@@ -82,7 +82,8 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/openssl/include \
         $(TOP)/frameworks/av/media/libstagefright/al_libc \
         $(TOP)/frameworks/av/include/alsp/inc \
-        $(TOP)/frameworks/av/include/alsp/inc/common
+        $(TOP)/frameworks/av/include/alsp/inc/common \
+        $(TOP)/hardware/libhardware/include/hardware
 
 ifneq ($(TI_CUSTOM_DOMX_PATH),)
 LOCAL_C_INCLUDES += $(TI_CUSTOM_DOMX_PATH)/omx_core/inc
