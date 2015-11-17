@@ -37,6 +37,8 @@
 #define PARSER_EXT_AMR "AMR"
 #define PARSER_EXT_SAMPLE "SAMPLE"
 #define PARSER_EXT_ALAC "ALAC"
+#define PARSER_EXT_WMALSL "WMALSL"
+#define PARSER_EXT_WMAPRO "WMAPRO"
 
 /* music related decoder */
 #define DEC_EXT_MP3 "MP3"
@@ -54,6 +56,9 @@
 #define DEC_EXT_SAMPLE "SAMPLE"
 #define DEC_EXT_ALAC "ALAC"
 #define DEC_EXT_AWB "AWB"
+#define DEC_EXT_WMASTD "WMASTD"
+#define DEC_EXT_WMALSL "WMALSL"
+#define DEC_EXT_WMAPRO "WMAPRO"
 
 /* music related encoder */
 #define ENC_EXT_MP3 "MP3"
