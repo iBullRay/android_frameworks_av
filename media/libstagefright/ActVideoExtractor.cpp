@@ -75,7 +75,7 @@ static const ExtToMime_t kExtToMime[] = {
     {"msm4", MEDIA_MIMETYPE_VIDEO_DIV3, CODEC_ACTIONS},
     {"mpeg", MEDIA_MIMETYPE_VIDEO_MPEG2, CODEC_ACTIONS},
     {"flv", MEDIA_MIMETYPE_VIDEO_FLV, CODEC_ACTIONS},
-    {"wmv8" , MEDIA_MIMETYPE_VIDEO_WMV8, CODEC_ACTIONS},
+    {"wmv8", MEDIA_MIMETYPE_VIDEO_WMV8, CODEC_ACTIONS},
     {"misc", MEDIA_MIMETYPE_VIDEO_WMV8, CODEC_ACTIONS},
     {"vp3t", MEDIA_MIMETYPE_VIDEO_WMV8, CODEC_ACTIONS},
     {"", "video/unsupport", CODEC_UNKNOWN}
@@ -2090,7 +2090,7 @@ void ActVideoExtractor::addTracks()
         mNotPlayVideo = true;
         ALOGW(" Not support video format(%s)",pv->extension);       
     }
-    meta->setCString(kKeyMIMEType, mEtm->mime);  
+    meta->setCString(kKeyMIMEType, mEtm->mime);
     ALOGD("kKeyWidth/kKeyHeight set with no alignment");
     meta->setInt32(kKeyWidth, /*(pv->width + 15)&(~15)*/pv->width);
     meta->setInt32(kKeyHeight, /*(pv->height + 15)&(~15)*/pv->height);

@@ -29,6 +29,9 @@ extern const char *MEDIA_MIMETYPE_VIDEO_MPEG4;
 extern const char *MEDIA_MIMETYPE_VIDEO_H263;
 extern const char *MEDIA_MIMETYPE_VIDEO_MPEG2;
 extern const char *MEDIA_MIMETYPE_VIDEO_RAW;
+extern const char *MEDIA_MIMETYPE_VIDEO_DIV3;
+extern const char *MEDIA_MIMETYPE_VIDEO_FLV;
+extern const char *MEDIA_MIMETYPE_VIDEO_WMV8;
 
 extern const char *MEDIA_MIMETYPE_AUDIO_AMR_NB;
 extern const char *MEDIA_MIMETYPE_AUDIO_AMR_WB;
@@ -44,6 +47,23 @@ extern const char *MEDIA_MIMETYPE_AUDIO_RAW;
 extern const char *MEDIA_MIMETYPE_AUDIO_FLAC;
 extern const char *MEDIA_MIMETYPE_AUDIO_AAC_ADTS;
 extern const char *MEDIA_MIMETYPE_AUDIO_DTS;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AAC;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_MP3;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_PCM;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_OGG;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_DTS;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AC3;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_APE;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_FLAC;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_MPC;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AIFF;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AMR;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_SAMPLE;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_ALAC;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMASTD;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMALSL;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMAPRO;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_COOK;
 
 extern const char *MEDIA_MIMETYPE_CONTAINER_MPEG4;
 extern const char *MEDIA_MIMETYPE_CONTAINER_WAV;
@@ -78,22 +98,6 @@ extern const char *MEDIA_MIMETYPE_VIDEO_DIVX311;
 extern const char *MEDIA_MIMETYPE_VIDEO_DIVX4;
 extern const char *MEDIA_MIMETYPE_VIDEO_WMV;
 #endif
-
-/* Actions audio-video codecs */
-extern const char *MEDIA_MIMETYPE_VIDEO_DIV3;
-extern const char *MEDIA_MIMETYPE_VIDEO_FLV;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AAC;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_MP3;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_PCM;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_OGG;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_DTS;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AC3;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_APE;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_FLAC;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_MPC;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AIFF;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AMR;
-extern const char *MEDIA_MIMETYPE_AUDIO_ACT_ALAC;
 
 }  // namespace android
 
