@@ -28,6 +28,7 @@ const char *MEDIA_MIMETYPE_VIDEO_MPEG2 = "video/mpeg2";
 const char *MEDIA_MIMETYPE_VIDEO_RAW = "video/raw";
 const char *MEDIA_MIMETYPE_VIDEO_DIV3 = "video/div3";
 const char *MEDIA_MIMETYPE_VIDEO_FLV = "video/flv";
+const char *MEDIA_MIMETYPE_VIDEO_WMV = "video/wmv8";
 
 const char *MEDIA_MIMETYPE_AUDIO_AMR_NB = "audio/3gpp";
 const char *MEDIA_MIMETYPE_AUDIO_AMR_WB = "audio/amr-wb";
