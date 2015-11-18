@@ -486,6 +486,11 @@ status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor) {
         String8 mime = String8(_mime);
 
         if (!haveVideo && !strncasecmp(mime.string(), "video/", 6)) {
+            if (!(strncasecmp(mime.string(), "video/unsupport", sizeof("video/unsupport")))) {
+                ALOGE("setDataSource_l: unsupport video format(%s) !", mime.string());
+                haveVideo = false;
+                continue;
+            }
             setVideoSource(extractor->getTrack(i));
             haveVideo = true;
 
@@ -513,6 +518,11 @@ status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor) {
                 !QCUtilityClass::helper_Awesomeplayer_checkIfAudioDisable() &&
 #endif
                     !strncasecmp(mime.string(), "audio/", 6)) {
+            if (!(strncasecmp(mime.string(), "audio/unsupport", sizeof("audio/unsupport")))) {
+                ALOGE("setDataSource_l: unsupport audio format(%s) !", mime.string());
+                haveAudio = false;
+                continue;
+            }
             setAudioSource(extractor->getTrack(i));
             haveAudio = true;
             mActiveAudioTrackIndex = i;
@@ -526,7 +536,8 @@ status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor) {
                 stat->mMIME = mime.string();
             }
 
-            if (!strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_VORBIS)) {
+            if (!strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_VORBIS ||
+                !strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_ACT_OGG)) {
                 // Only do this for vorbis audio, none of the other audio
                 // formats even support this ringtone specific hack and
                 // retrieving the metadata on some extractors may turn out
@@ -726,7 +737,7 @@ bool AwesomePlayer::getBitrate(int64_t *bitrate) {
 bool AwesomePlayer::getCachedDuration_l(int64_t *durationUs, bool *eos) {
     int64_t bitrate;
 
-    if (mCachedSource != NULL && getBitrate(&bitrate)) {
+    if (mCachedSource != NULL && getBitrate(&bitrate) && (bitrate > 0)) {
         status_t finalStatus;
         size_t cachedDataRemaining = mCachedSource->approxDataRemaining(&finalStatus);
         *durationUs = cachedDataRemaining * 8000000ll / bitrate;
@@ -1598,30 +1609,13 @@ void AwesomePlayer::addTextSource_l(size_t trackIndex, const sp<MediaSource>& so
 status_t AwesomePlayer::initAudioDecoder() {
     ATRACE_CALL();
 
-    ALOGD("initAudioDecoder mUsingMidwareAudioDecFlag: %s", (mUsingMidwareAudioDecFlag == false) ? "false" : "true");{
-    if (0) {
-        ALOGD("initAudioDecoder: using middleware audio decoder");
-        mAudioSource = new ActAudioDecoder(mAudioTrack);
-        if (mAudioSource != NULL) {
-            int64_t durationUs;
-            if (mAudioTrack->getFormat()->findInt64(kKeyDuration, &durationUs)) {
-                Mutex::Autolock autoLock(mMiscStateLock);
-                if (mDurationUs < 0 || durationUs > mDurationUs) {
-                    mDurationUs = durationUs;
-                    ALOGD("initAudioDecoder: durationUs: %lld  ",durationUs);
-                }
-            }
-            status_t err = mAudioSource->start();
-            if (err != OK) {
-                ALOGE("initAudioDecoder() => mAudioSource->start error(%d)", err);
-                mAudioSource.clear();
-                return err;
-            }
-        }
-    } else
+    ALOGD("initAudioDecoder mUsingMidwareAudioDecFlag: %s", (mUsingMidwareAudioDecFlag == false) ? "false" : "true");
+
     ALOGD("initAudioDecoder: using stagefright audio decoder");
 
     sp<MetaData> meta = mAudioTrack->getFormat();
+
+    mAudioSource = new ActAudioDecoder(mAudioTrack);
 
     const char *mime;
     CHECK(meta->findCString(kKeyMIMEType, &mime));
