@@ -536,7 +536,7 @@ status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor) {
                 stat->mMIME = mime.string();
             }
 
-            if (!strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_VORBIS ||
+            if (!strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_VORBIS) ||
                 !strcasecmp(mime.string(), MEDIA_MIMETYPE_AUDIO_ACT_OGG)) {
                 // Only do this for vorbis audio, none of the other audio
                 // formats even support this ringtone specific hack and

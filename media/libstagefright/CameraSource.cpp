@@ -333,10 +333,8 @@ status_t CameraSource::configureCamera(
                 params->setPreviewSize(width, height);
             }
             isCameraParamChanged = true;
-        }
-        else
+        } else {
         #endif
-        {
             //should use max preview size? fixed later
             if (isVideoSizeSupported(width, height, sizes)) {
                 if (isSetVideoSizeSupportedByCamera) {
@@ -346,6 +344,7 @@ status_t CameraSource::configureCamera(
                 }
                 isCameraParamChanged = true;
             }
+        }
     } else if ((width == -1 && height != -1) ||
                (width != -1 && height == -1)) {
         // If one and only one of the width and height is -1
