@@ -322,28 +322,25 @@ status_t CameraSource::configureCamera(
     bool isCameraParamChanged = false;
     if (width != -1 && height != -1) {
         #if 0
-        if (mIsMetaDataStoredInVideoBuffers == false) {
-            if (!isVideoSizeSupported(width, height, sizes)) {
-                ALOGE("Video dimension (%dx%d) is unsupported", width, height);
-                return BAD_VALUE;
-            }
+        if (!isVideoSizeSupported(width, height, sizes)) {
+            ALOGE("Video dimension (%dx%d) is unsupported", width, height);
+            return BAD_VALUE;
+        }
+        if (isSetVideoSizeSupportedByCamera) {
+            params->setVideoSize(width, height);
+        } else {
+            params->setPreviewSize(width, height);
+        }
+        isCameraParamChanged = true;
+        #endif
+        //should use max preview size? fixed later
+        if (isVideoSizeSupported(width, height, sizes)) {
             if (isSetVideoSizeSupportedByCamera) {
                 params->setVideoSize(width, height);
             } else {
                 params->setPreviewSize(width, height);
             }
             isCameraParamChanged = true;
-        } else {
-        #endif
-            //should use max preview size? fixed later
-            if (isVideoSizeSupported(width, height, sizes)) {
-                if (isSetVideoSizeSupportedByCamera) {
-                    params->setVideoSize(width, height);
-                } else {
-                    params->setPreviewSize(width, height);
-                }
-                isCameraParamChanged = true;
-            }
         }
     } else if ((width == -1 && height != -1) ||
                (width != -1 && height == -1)) {
@@ -444,18 +441,12 @@ status_t CameraSource::checkVideoSize(
         #endif
     }
 
-    // Good now.
     #if 0
-    if (mIsMetaDataStoredInVideoBuffers == false) {
         mVideoSize.width = frameWidthActual;
         mVideoSize.height = frameHeightActual;
-    }
-    else
     #endif
-    {
         mVideoSize.width = width;
         mVideoSize.height = height;
-    }
     return OK;
 }
 
