@@ -64,6 +64,7 @@ extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMASTD;
 extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMALSL;
 extern const char *MEDIA_MIMETYPE_AUDIO_ACT_WMAPRO;
 extern const char *MEDIA_MIMETYPE_AUDIO_ACT_COOK;
+extern const char *MEDIA_MIMETYPE_AUDIO_ACT_AWB;
 
 extern const char *MEDIA_MIMETYPE_CONTAINER_MPEG4;
 extern const char *MEDIA_MIMETYPE_CONTAINER_WAV;
