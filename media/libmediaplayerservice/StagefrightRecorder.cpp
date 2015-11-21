@@ -989,8 +989,7 @@ sp<MediaSource> StagefrightRecorder::createAudioSource() {
 
     OMXClient client;
     CHECK_EQ(client.connect(), (status_t)OK);
-    sp<MediaSource> audioEncoder =
-        OMXCodec::Create(client.interface(), encMeta,
+    audioEncoder = OMXCodec::Create(client.interface(), encMeta,
                          true /* createEncoder */, audioSource);
     audioEncoder = new ActAudioEncoder(audioSource, encMeta);
 #ifdef QCOM_HARDWARE
