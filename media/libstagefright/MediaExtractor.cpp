@@ -67,6 +67,7 @@ sp<MediaExtractor> MediaExtractor::Create(
     sp<AMessage> meta;
 
     bool usingMidwareFlag = false;
+    bool isDrm = false;
     MediaExtractor *ret = NULL;
     String8 tmp;
 
@@ -98,7 +99,6 @@ sp<MediaExtractor> MediaExtractor::Create(
              mime, confidence);
     }
 
-    bool isDrm = false;
     // DRM MIME type syntax is "drm+type+original" where
     // type is "es_based" or "container_based" and
     // original is the content's cleartext MIME type
@@ -121,9 +121,8 @@ sp<MediaExtractor> MediaExtractor::Create(
     }
 
 #if 0
-    //parser and decoder: both playback and streaming use android's
+    // parser and decoder: both playback and streaming use android's
     if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_OGG)) {
-        //isStreamFlag = true;
         if (isStreamFlag == true) {
             ALOGD("use google ogg decoder");
         } else {
@@ -131,7 +130,7 @@ sp<MediaExtractor> MediaExtractor::Create(
         }
     }
 #endif
-    //parser and decoder: both playback and streaming use android's
+    // parser and decoder: both playback and streaming use android's
     if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MPEG4)) {
         // then check if can use middleware extractor
         off64_t filelen = 0;
@@ -141,7 +140,7 @@ sp<MediaExtractor> MediaExtractor::Create(
         ALOGV("Create: then choose to use middleware parser mime: %s !!!", mime);
 
         storage_io = create_storage_io();
-        if (storage_io == NULL)	{
+        if (storage_io == NULL) {
             return NULL;
         }
 
@@ -181,7 +180,6 @@ sp<MediaExtractor> MediaExtractor::Create(
         }
     }
 
-    MediaExtractor *ret = NULL;
     if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MPEG4)
             || !strcasecmp(mime, "audio/mp4")) {
         int fragmented = 0;
@@ -225,6 +223,7 @@ sp<MediaExtractor> MediaExtractor::Create(
         } else {
             ret->setDrmFlag(false);
         }
+        return ret;
     }
 
 #ifdef QCOM_HARDWARE
@@ -233,26 +232,23 @@ sp<MediaExtractor> MediaExtractor::Create(
                                                                  source,
                                                                    mime);
 #else
-    return ret;
-#endif
-
-middleware_extractor:
+    middleware_extractor:
 
     // then check if can use middleware extractor
     off64_t filelen = 0;
     int rt = 0;
     storage_io_t *storage_io = NULL;
     const char mime_type[32] = "";
-    ALOGV("Create: then choose to use middleware parser mime: %s !!!", mime);
-#if 0
-    if (mime != NULL) {
-        ALOGE("Create: fail to load %s", mime);
-        return NULL;
-    }
-#endif
+    ALOGV("Create: then choose to use middleware parser mime: %s !", mime);
+    #if 0
+        if (mime != NULL) {
+            ALOGE("Create: fail to load %s", mime);
+            return NULL;
+        }
+    #endif
 
     storage_io = create_storage_io();
-    if (storage_io == NULL)	{
+    if (storage_io == NULL) {
         return NULL;
     }
 
@@ -285,6 +281,7 @@ middleware_extractor:
     }
 
     return NULL;
+#endif
 }
 
 }  // namespace android
