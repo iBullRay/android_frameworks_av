@@ -10,6 +10,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := \
     $(call include-path-for, alsp) \
+    $(TOP)/frameworks/av/include/alsp/inc \
     $(TOP)/external/icu4c/common
 
 LOCAL_SHARED_LIBRARIES := libutils libcutils libicuuc libion
