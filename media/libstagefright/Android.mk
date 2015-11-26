@@ -81,6 +81,8 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/tremolo \
         $(TOP)/external/openssl/include \
         $(TOP)/frameworks/av/media/libstagefright/al_libc \
+        $(TOP)/frameworks/av/media/libstagefright/id3parser \
+        $(TOP)/frameworks/av/media/libstagefright/mmminfo \
         $(TOP)/frameworks/av/include/alsp/inc \
         $(TOP)/frameworks/av/include/alsp/inc/common \
         $(TOP)/hardware/libhardware/include/hardware
@@ -168,6 +170,8 @@ LOCAL_STATIC_LIBRARIES := \
         libstagefright_httplive \
         libstagefright_id3 \
         libFLAC \
+        libmmminfo \
+        libid3parser
 
 LOCAL_SRC_FILES += \
         chromium_http_stub.cpp
