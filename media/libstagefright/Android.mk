@@ -74,17 +74,16 @@ LOCAL_SRC_FILES+=                         \
 endif
 
 LOCAL_C_INCLUDES:= \
-        $(call include-path-for, alsp) \
         $(TOP)/frameworks/av/include/media/stagefright/timedtext \
         $(TOP)/frameworks/native/include/media/hardware \
         $(TOP)/external/flac/include \
         $(TOP)/external/tremolo \
         $(TOP)/external/openssl/include \
+        $(TOP)/frameworks/av/include/alsp/inc \
+        $(TOP)/frameworks/av/include/alsp/inc/common \
         $(TOP)/frameworks/av/media/libstagefright/al_libc \
         $(TOP)/frameworks/av/media/libstagefright/id3parser \
         $(TOP)/frameworks/av/media/libstagefright/mmminfo \
-        $(TOP)/frameworks/av/include/alsp/inc \
-        $(TOP)/frameworks/av/include/alsp/inc/common \
         $(TOP)/hardware/libhardware/include/hardware
 
 ifneq ($(TI_CUSTOM_DOMX_PATH),)

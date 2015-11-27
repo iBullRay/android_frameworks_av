@@ -11,6 +11,7 @@ LOCAL_SRC_FILES:=                 \
 
 LOCAL_C_INCLUDES:= \
     $(TOP)/frameworks/av/include/alsp/inc \
+    $(TOP)/frameworks/av/include/alsp/inc/common \
     $(TOP)/frameworks/av/media/libstagefright \
     $(TOP)/frameworks/native/include/media/openmax
 

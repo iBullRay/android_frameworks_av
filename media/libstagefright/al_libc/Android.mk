@@ -9,8 +9,8 @@ LOCAL_SRC_FILES := \
     SinoDetect.cpp
 
 LOCAL_C_INCLUDES := \
-    $(call include-path-for, alsp) \
     $(TOP)/frameworks/av/include/alsp/inc \
+    $(TOP)/frameworks/av/include/alsp/inc/common \
     $(TOP)/external/icu4c/common
 
 LOCAL_SHARED_LIBRARIES := libutils libcutils libicuuc libion
